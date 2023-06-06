@@ -66,7 +66,7 @@ def get_args() -> argparse.Namespace:
     parser.add_argument("--query", type=str, default=None)
 
     # default is none as it should attempt to auto-detect based off of file ending
-    parser.add_argument("--file-type", type=str, choices=["txt", "epub", "renji", "exstatic"], default=None)
+    parser.add_argument("--file-type", type=str, choices=["txt", "epub", "renji"], default=None)
 
     return parser.parse_args()
 
@@ -89,7 +89,7 @@ class SentenceInfo:
 class FileType(enum.Enum):
     txt = enum.auto()
     epub = enum.auto()
-    exstatic = enum.auto()
+    #exstatic = enum.auto() # exstatic does not store lines!
     renji = enum.auto()
 
 
@@ -192,9 +192,6 @@ def main():
             file_type_str = "txt"
         elif suffix == ".epub":
             file_type_str = "epub"
-        elif suffix == ".csv":
-            print("Found csv file. Expecting this to be a csv file exported from exstatic.")
-            file_type_str = "exstatic"
         elif suffix == ".json":
             print("Found json file. Expecting this to be a json file exported from Renji's texthooker-ui.")
             file_type_str = "renji"
