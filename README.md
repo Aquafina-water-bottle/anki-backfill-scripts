@@ -3,7 +3,7 @@
 Currently contains `backfill_context.py`, a simple script to search for sentences within your source and add the surrounding sentences to your Anki card.
 
 # TODO
-- Search sentences better! A better way of searching sentences would be:
+- (done) Search sentences better! A better way of searching sentences would be:
     - Remove whitespace from string
     - Concatenate all lines into one string
     - Search for substring in processed string

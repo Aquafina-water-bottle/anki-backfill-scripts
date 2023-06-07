@@ -7,7 +7,7 @@ import enum
 from pathlib import Path
 from os import PathLike
 from dataclasses import dataclass
-from typing import List
+from index import CorpusIndex
 
 # ========================== from anki-connect =========================== #
 
@@ -40,7 +40,9 @@ def invoke(action, **params):
 
 # =========================================================================== #
 
-rx_HTML = re.compile("<.*?>")
+rx_HTML = re.compile(r"<.*?>")
+
+
 
 
 def remove_html(expression: str):
@@ -49,7 +51,7 @@ def remove_html(expression: str):
 
 def get_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
     parser.add_argument(
@@ -58,7 +60,7 @@ def get_args() -> argparse.Namespace:
     )
 
     # behaves like grep's --context-before and --context-after
-    parser.add_argument("--context-before", type=int, default=15)
+    parser.add_argument("--context-before", type=int, default=10)
     parser.add_argument("--context-after", type=int, default=5)
     parser.add_argument("--tag", type=str, default=None)
     parser.add_argument("--note-type", type=str, default="JP Mining Note")
@@ -152,7 +154,7 @@ def load_lines_renji(path: PathLike):
 
 
 def search_lines(
-    lines: list[str],
+    corpus_index: CorpusIndex,
     sentence_info_list: list[SentenceInfo],
     context_before: int,
     context_after: int,
@@ -165,20 +167,18 @@ def search_lines(
         s = sentence_info.sentence
         word = sentence_info.bolded_text
 
-        for i in range(len(lines)):
-            line = lines[i]
+        result = corpus_index.find_lines(s)
+        if result is None:
+            continue
 
-            if s in line:
-                context_lst = lines[
-                    max(0, i - context_before) : min(len(lines), i + context_after)
-                ]
-                context = "<br>".join(context_lst)
-                if word is not None:
-                    context = context.replace(word, "<b>" + word + "</b>")
-                actions.append(construct_action(id, context))
-                print(context)
-                break
+        start, end = result
+        context_lst = corpus_index.index_og_lines(max(start-context_before, 0), end+context_after)
+        context = "<br>".join(context_lst)
+        if word is not None:
+            context = context.replace(word, "<b>" + word + "</b>")
 
+        actions.append(construct_action(id, context))
+        print(context)
 
 def main():
     args = get_args()
@@ -203,6 +203,7 @@ def main():
         raise RuntimeError("Unable to automatically detect file type. Please specify a valid --file-type")
 
     lines = load_lines(path, file_type)
+    corpus_index = CorpusIndex(lines)
 
     # search for notes with Anki-Connect
     if args.query is not None:
@@ -222,7 +223,7 @@ def main():
     # creates multi action to update multiple notes
     actions = []
 
-    search_lines(lines, sentence_info_list, args.context_before, args.context_after, actions)
+    search_lines(corpus_index, sentence_info_list, args.context_before, args.context_after, actions)
 
     print(len(actions))
 
